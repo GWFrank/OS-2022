@@ -33,23 +33,30 @@ void writePipe(int dir_n, int file_n, int fd) {
     fprintf(fd, "%d %d\n", dir_n, file_n);
 }
 
-void printTreeLine(char *ent_name, int level) {
+void printTreeLine(char *ent_name, char *tree_pre) {
     // line1
-    printf("|");
-    for (int i=0; i<level-1; i++) {
-        printf("   |");
-    }
-    printf("\n");
+    printf("%s|\n", tree_pre);
     // line2
-    for (int i=0; i<level-1; i++) {
-        printf("|   ");
-    }
-    printf("+-- %s\n", ent_name);
+    printf("%s+-- %s\n", tree_pre, ent_name);
 }
 
-void traverse(char *path, int level) {
+void preparePrefix(char *prefix, int level) {
+    char *p = prefix+strlen(prefix);
+    *p = '|';
+    p++;
+    if (level != 1) {
+        for (int i=0; i<3; i++) {
+            *p = ' ';
+            p++;
+        }
+    }
+    *p = '\0';
+}
+
+void traverse(char *path, int level, char *prefix_this, int ret[2]) {
     int fd;
     char buf[512], p_buf[512], *p; // p is at the end of parent path
+    char prefix_nxt[64];
     struct dirent ent, p_ent;
     struct stat ent_st, p_ent_st;
     
@@ -59,6 +66,10 @@ void traverse(char *path, int level) {
     p = buf+strlen(buf);
     *p = '/';
     p++;
+    strcpy(prefix_nxt, prefix_this);
+    preparePrefix(prefix_nxt, level);
+    // printf("this level %d has prefix '%s'\n", level, prefix_this);
+
     while (read(fd, &ent, sizeof(ent)) == sizeof(ent)) {
         // read new entry
         if (ent.inum == 0)
@@ -69,16 +80,15 @@ void traverse(char *path, int level) {
         memmove(p, ent.name, DIRSIZ);
         p[DIRSIZ] = 0;
         stat(buf, &ent_st);
-        // printTreeLine(ent.name, level+1);
-        // if (ent_st.type == T_DIR) {
-        //     traverse(buf, level+1);
-        // }
         // process previous entry
         if (p_buf[0] != '\0') {
-            printTreeLine(p_ent.name, level+1);
+            printTreeLine(p_ent.name, prefix_this);
             stat(p_buf, &p_ent_st);
             if (p_ent_st.type == T_DIR) {
-                traverse(p_buf, level+1);
+                ret[0]++;
+                traverse(p_buf, level+1, prefix_nxt, ret);
+            } else {
+                ret[1]++;
             }
         }
         // copy entry
@@ -87,10 +97,14 @@ void traverse(char *path, int level) {
     }
     // process last entry
     if (p_buf[0] != '\0') {
-        printTreeLine(p_ent.name, level+1);
+        prefix_nxt[4*level] = ' ';
+        printTreeLine(p_ent.name, prefix_this);
         stat(p_buf, &p_ent_st);
         if (p_ent_st.type == T_DIR) {
-            traverse(p_buf, level+1);
+                ret[0]++;
+                traverse(p_buf, level+1, prefix_nxt, ret);
+        } else {
+            ret[1]++;
         }
     }
     close(fd);
@@ -125,8 +139,11 @@ int main(int argc, char *argv[]) {
         printf("\n");
         close(rfd);
         // start traversing
-        traverse(root, 0);
-        
+        int ret[2] = {0, 0};
+        char prefix[64] = "";
+        traverse(root, 0, prefix, ret);
+        dir_n = ret[0]; file_n = ret[1];
+
         writePipe(dir_n, file_n, pfd[1]);
         close(pfd[1]);
         exit(0);
