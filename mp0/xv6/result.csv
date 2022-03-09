@@ -1,13 +1,21 @@
 == Test tree command with public testcase 0 (5%) ==
-tree command with public testcase 0: OK (6.3s)
+tree command with public testcase 0: OK (2.4s)
 == Test tree command with public testcase 1 (5%) ==
-tree command with public testcase 1: OK (1.0s)
+tree command with public testcase 1: OK (0.8s)
 == Test tree command with public testcase 2 (5%) ==
-tree command with public testcase 2: OK (1.0s)
+tree command with public testcase 2: OK (0.8s)
 == Test tree command with public testcase 3 (5%) ==
-tree command with public testcase 3: OK (1.0s)
+tree command with public testcase 3: OK (0.8s)
 == Test tree command with public testcase 4 (10%) ==
-tree command with public testcase 4: OK (1.0s)
+tree command with public testcase 4: OK (0.8s)
 == Test tree command with public testcase 5 (10%) ==
 tree command with public testcase 5: OK (1.0s)
-Score: 40/40
+== Test tree command with private testcase 0 (10%) ==
+tree command with private testcase 0: OK (0.9s)
+== Test tree command with private testcase 1 (25%) ==
+tree command with private testcase 1: FAIL (1.0s)
+    [Error] Output on line 0: 'pa [error opening dir]', should be 'pa'
+== Test tree command with private testcase 2 (25%) ==
+tree command with private testcase 2: FAIL (1.0s)
+    [Error] Output on line 0: 'pb [error opening dir]', should be 'pb'
+Score: 50/100

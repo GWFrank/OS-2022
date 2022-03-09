@@ -44,7 +44,7 @@ void preparePrefix(char *prefix, int level) {
     char *p = prefix+strlen(prefix);
     *p = '|';
     p++;
-    if (level != 1) {
+    if (level != 0) {
         for (int i=0; i<3; i++) {
             *p = ' ';
             p++;
@@ -55,7 +55,7 @@ void preparePrefix(char *prefix, int level) {
 
 void traverse(char *path, int level, char *prefix_this, int ret[2]) {
     int fd;
-    char buf[512], p_buf[512], *p; // p is at the end of parent path
+    char buf[64], p_buf[64], *p; // p is at the end of parent path
     char prefix_nxt[64];
     struct dirent ent, p_ent;
     struct stat ent_st, p_ent_st;
@@ -67,7 +67,7 @@ void traverse(char *path, int level, char *prefix_this, int ret[2]) {
     *p = '/';
     p++;
     strcpy(prefix_nxt, prefix_this);
-    preparePrefix(prefix_nxt, level);
+    preparePrefix(prefix_nxt, level+1);
     // printf("this level %d has prefix '%s'\n", level, prefix_this);
 
     while (read(fd, &ent, sizeof(ent)) == sizeof(ent)) {
