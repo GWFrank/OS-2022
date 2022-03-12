@@ -40,14 +40,14 @@ thread 2: 563
 thread 5: 1002
 thread 9: 966
 thread 7: 988
-thread 8: 949
 thread 2: 564
 thread 5: 1003
 thread 9: 967
-thread 8: 950
+thread 8: 949
 thread 2: 565
 thread 9: 968
-thread 8: 951
+thread 8: 950
 thread 9: 969
+thread 8: 951
 
 exited

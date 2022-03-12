@@ -112,11 +112,12 @@ void thread_exit(void) {
         root_thread = NULL;
         longjmp(env_st, 1);
     } else {
-        // update current_thread
-        schedule();
+        
         // modify thread tree & free unused thread
         if (exiting->left == NULL 
               && exiting->right == NULL) { // leaf
+            // update current_thread
+            schedule();
             // cut exiting from its parent
             if (exiting == exiting->parent->left)
                 exiting->parent->left = NULL;
@@ -160,6 +161,9 @@ void thread_exit(void) {
                 root_thread = next;
             free(exiting->stack);
             free(exiting);
+            // update current_thread
+            current_thread = next;
+            schedule();
         }
         // run current_thread
         dispatch();
