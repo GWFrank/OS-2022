@@ -452,7 +452,27 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 
 /* NTU OS 2022 */
 /* Print multi layer page table. */
-void traverse(pagetable_t pt, char prefix[64], int level) {
+void print_entry(pagetable_t pt, int idx, char prefix[64], int is_last, uint64 va) {
+    printf("%s", prefix);
+    if (is_last)
+        printf("└── ");
+    else
+        printf("├── ");
+    printf("%d: pte=%p va=%p pa=%p", idx, &pt[idx], va, PTE2PA(pt[idx]));
+    if (pt[idx]&PTE_V) printf(" V");
+    if (pt[idx]&PTE_R) printf(" R");
+    if (pt[idx]&PTE_W) printf(" W");
+    if (pt[idx]&PTE_X) printf(" X");
+    if (pt[idx]&PTE_U) printf(" U");
+    printf("\n");
+}
+
+uint64 calc_va(uint64 va_st, int level, int idx) {
+    uint64 add = (uint64) idx << (12+9*(3-level));
+    return va_st+add;
+}
+
+void traverse(pagetable_t pt, char prefix[64], int level, uint64 va_st) {
     // chars for output: └ ─ ├ │
     char prefix_next[64];
     int p=0;
@@ -470,9 +490,9 @@ void traverse(pagetable_t pt, char prefix[64], int level) {
         if (pt[i]&PTE_V) {
             if (prev_valid >= 0) {
                 pagetable_t next_pt = (pagetable_t) PTE2PA(pt[prev_valid]);
-                printf("%s├── i: %p\n", prefix, pt[prev_valid]);
-                if (level < 3)
-                    traverse(next_pt, prefix_next, level+1);
+                uint64 va = calc_va(va_st, level, prev_valid);
+                print_entry(pt, prev_valid, prefix, 0, va);
+                if (level < 3) traverse(next_pt, prefix_next, level+1, va);
             }
             prev_valid = i;
         }
@@ -483,20 +503,18 @@ void traverse(pagetable_t pt, char prefix[64], int level) {
         prefix_next[p+i] = last_pre[i];
     if (prev_valid >= 0) {
         pagetable_t next_pt = (pagetable_t) PTE2PA(pt[prev_valid]);
-        printf("%s└── i: %p\n", prefix, pt[prev_valid]);
-        if (level < 3)
-            traverse(next_pt, prefix_next, level+1);
+        uint64 va = calc_va(va_st, level, prev_valid);
+        print_entry(pt, prev_valid, prefix, 1, va);
+        if (level < 3) traverse(next_pt, prefix_next, level+1, va);
     }
 }
 
 void vmprint(pagetable_t pagetable) {
     /* TODO */
-    // int pt_len = 512;
-
     printf("page table %p\n", pagetable);
     char prefix[64];
     prefix[0] = '\0';
-    traverse(pagetable, prefix, 1);
+    traverse(pagetable, prefix, 1, 0);
 
     // panic("not implemented yet\n");
 }
