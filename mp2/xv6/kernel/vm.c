@@ -480,7 +480,7 @@ void traverse(pagetable_t pt, char prefix[64], int level, uint64 va_st) {
         prefix_next[p] = prefix[p];
         ++p;
     }
-    // hard-code, keep p at the bar
+    // keep p at the bar
     char non_last_pre[] = "│   ";
     for (int i=0; i<=strlen(non_last_pre); i++)
         prefix_next[p+i] = non_last_pre[i];
