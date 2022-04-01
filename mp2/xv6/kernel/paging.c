@@ -10,7 +10,7 @@
 /* Page fault handler */
 int handle_pgfault() {
   /* Find the address that caused the fault */
-  uint64 va = r_stval();
+  /* uint64 va = r_stval(); */
 
   /* TODO */
   panic("not implemented yet\n");
