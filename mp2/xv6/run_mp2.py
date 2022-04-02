@@ -27,5 +27,10 @@ def test_mp2_4():
     r = Runner(save("mp2_4.out"))
     r.run_qemu(shell_script(["mp2_4"]), timeout=300)
 
+@test(0, "mp2_5")
+def test_mp2_4():
+    r = Runner(save("mp2_5.out"))
+    r.run_qemu(shell_script(["mp2_5"]), timeout=300)
+
 
 run_tests()

@@ -68,6 +68,10 @@ void usertrap(void)
     {
         // ok
     }
+    else if (r_scause() == 13 || r_scause() == 15)
+    {
+        handle_pgfault();
+    }
     else
     {
 
