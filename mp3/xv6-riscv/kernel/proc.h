@@ -109,4 +109,19 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  // mp3
+  int max_context_id;
+  int now_context_id;
+  int is_counting;
+  int ticks_passed; // Total ticks passed in this process
+  int delay; // Delay set by sys_thrdstop
+  uint64 thrdstop_handler;
+  uint64 handler_arg;
+  struct trapframe saved_context[24];
+  int is_resuming;
+  int resume_cid;
+  int is_storing;
+  int store_cid;
+
 };

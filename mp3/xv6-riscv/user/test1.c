@@ -21,6 +21,7 @@ void gg(int *k)
   int x = 0;
   for (int i = 1; i <= 1000; ++i) {
     x = x + i;
+    // printf("i=%d\n", i);
   }
   if (x != (1 + 1000) * 500) {
     printf("FAILED!!!!! %d\n", x);
@@ -59,6 +60,7 @@ int main(int argc, char **argv)
 
     startTime = uptime();
     main_id = thrdstop( 5, -1, thrdstop_test2, (void *)0xbbbb87);
+    // printf("after first thrdstop, main_id=%d\n", main_id); // added
     int i = 0, j = 0;
     int tmp_time = 0;
     while (1)

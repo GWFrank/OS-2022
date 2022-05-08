@@ -111,8 +111,19 @@ sys_thrdstop(void)
     return -1;
   if (argaddr(3, &handler_arg) < 0)
     return -1;
-
-  return 0;
+  
+  struct proc *p = myproc();
+  if (thrdstop_context_id < 0) {
+    p->max_context_id++;
+    thrdstop_context_id = p->max_context_id;
+  }
+  p->now_context_id = thrdstop_context_id;
+  p->is_counting = 1;
+  p->ticks_passed = 0;
+  p->delay = delay;
+  p->thrdstop_handler = handler;
+  p->handler_arg = handler_arg;
+  return thrdstop_context_id;
 }
 
 // for mp3
@@ -124,8 +135,15 @@ sys_cancelthrdstop(void)
     return -1;
   if (argint(1, &is_exit) < 0)
     return -1;
-
-  return 0;
+  
+  struct proc *p = myproc();
+  p->is_counting = 0;
+  if (is_exit == 0 && thrdstop_context_id != -1) {
+    p->is_storing = 1;
+    p->store_cid = thrdstop_context_id;
+  }
+  
+  return p->ticks_passed;
 }
 
 // for mp3
@@ -135,6 +153,11 @@ sys_thrdresume(void)
   int  thrdstop_context_id;
   if (argint(0, &thrdstop_context_id) < 0)
     return -1;
+  
+  struct proc *p = myproc();
+  // struct context old;
+  p->is_resuming = 1;
+  p->resume_cid = thrdstop_context_id;
 
   return 0;
 }

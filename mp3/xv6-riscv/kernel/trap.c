@@ -79,6 +79,8 @@ usertrap(void)
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
   {
+    if (p->is_counting)
+      p->ticks_passed++;
     yield();
   }
   usertrapret();
@@ -117,6 +119,35 @@ usertrapret(void)
   x |= SSTATUS_SPIE; // enable interrupts in user mode
   w_sstatus(x);
 
+  // ===== mp3 start =====
+  // Go to thrdstop handler
+  if (p->is_counting && p->ticks_passed >= p->delay) {
+    // Stop counting
+    p->is_counting = 0;
+    // Store context
+    int cid = p->now_context_id;
+    p->saved_context[cid] = *(p->trapframe);
+    // Prepare for handler
+    p->trapframe->epc = p->thrdstop_handler;
+    p->trapframe->a0 = p->handler_arg;
+  }
+
+  // From cancelthrdstop
+  if (p->is_storing) {
+    p->is_storing = 0;
+    int cid = p->store_cid;
+    p->saved_context[cid] = *(p->trapframe);
+  }
+
+  // From thrdresume
+  if (p->is_resuming) {
+    p->is_resuming = 0;
+    int cid = p->resume_cid;
+    // Restore context, move pc to where the countdown ends
+    *(p->trapframe) = p->saved_context[cid];
+  }
+  // ===== mp3 end =====
+
   // set S Exception Program Counter to the saved user pc.
   w_sepc(p->trapframe->epc);
 
@@ -154,6 +185,8 @@ kerneltrap()
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)
   {
+    if (myproc()->is_counting)
+      myproc()->ticks_passed++;
     yield();
   }
 

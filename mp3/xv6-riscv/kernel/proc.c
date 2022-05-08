@@ -134,6 +134,18 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // mp3
+  p->max_context_id = -1;
+  p->now_context_id = -1;
+  p->is_counting = 0;
+  p->ticks_passed = 0;
+  p->delay = -1;
+  p->thrdstop_handler = 0;
+  p->handler_arg = 0;
+  p->is_resuming = 0;
+  p->is_storing = 0;
+
+
   return p;
 }
 
