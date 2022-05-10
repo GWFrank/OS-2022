@@ -66,29 +66,35 @@ void thread_add_at(struct thread *t, int adding_time) {
     }
 }
 
-void add_from_adding_queue() {
-    struct adding_thread_node *tmp_node = adding_queue;
-    while (tmp_node != NULL) {
+void add_from_adding_queue(){
+    struct adding_thread_node *tmp_node = adding_queue ;
+    while( tmp_node != NULL ){
         struct adding_thread_node *to_remove = tmp_node;
         tmp_node = tmp_node->next;
-        if (threading_system_time >= to_remove->adding_time) {
+        if( threading_system_time >= to_remove->adding_time ){
             // printf("adding\n");
-            thread_add_runqueue(to_remove->thrd);
-            if (to_remove->next != to_remove) {
-                // Connect the remaining queue
+            thread_add_runqueue( to_remove->thrd ) ;
+            if( to_remove == adding_queue ){
+                adding_queue = adding_queue->next ;
+            }
+            
+            if( to_remove->next != to_remove ){
+                //Connect the remaining queue
                 struct adding_thread_node *to_remove_next = to_remove->next;
                 to_remove_next->previous = to_remove->previous;
                 to_remove->previous->next = to_remove_next;
-                free(to_remove);
-            } else {
-                // No more node in adding_queue
-                free(to_remove);
+                free( to_remove ) ;
+            }
+            else{
+                //No more node in adding_queue
+                free( to_remove ) ;
                 adding_queue = NULL;
                 break;
             }
         }
 
-        if (tmp_node == adding_queue) break;
+        if( tmp_node == adding_queue )
+            break;
     }
 }
 

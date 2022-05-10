@@ -114,6 +114,7 @@ struct proc {
   int max_context_id;
   int now_context_id;
   int is_counting;
+  // int finish_counting;
   int ticks_passed; // Total ticks passed in this process
   int delay; // Delay set by sys_thrdstop
   uint64 thrdstop_handler;

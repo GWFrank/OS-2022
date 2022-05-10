@@ -81,6 +81,11 @@ usertrap(void)
   {
     if (p->is_counting)
       p->ticks_passed++;
+    // if (p->is_counting && p->ticks_passed >= p->delay) {
+    //   // Stop counting
+    //   p->is_counting = 0;
+    //   p->finish_counting = 1;
+    // }
     yield();
   }
   usertrapret();
@@ -122,8 +127,10 @@ usertrapret(void)
   // ===== mp3 start =====
   // Go to thrdstop handler
   if (p->is_counting && p->ticks_passed >= p->delay) {
+  // if (p->finish_counting) {
     // Stop counting
     p->is_counting = 0;
+    // p->finish_counting = 0;
     // Store context
     int cid = p->now_context_id;
     p->saved_context[cid] = *(p->trapframe);
@@ -187,6 +194,11 @@ kerneltrap()
   {
     if (myproc()->is_counting)
       myproc()->ticks_passed++;
+    // if (myproc()->is_counting && myproc()->ticks_passed >= myproc()->delay){
+    //   // Stop counting
+    //   myproc()->is_counting = 0;
+    //   myproc()->finish_counting = 1;
+    // }
     yield();
   }
 

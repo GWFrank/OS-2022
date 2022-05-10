@@ -119,6 +119,7 @@ sys_thrdstop(void)
   }
   p->now_context_id = thrdstop_context_id;
   p->is_counting = 1;
+  // p->finish_counting = 0;
   p->ticks_passed = 0;
   p->delay = delay;
   p->thrdstop_handler = handler;

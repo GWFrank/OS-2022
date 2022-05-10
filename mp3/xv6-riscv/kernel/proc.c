@@ -138,6 +138,7 @@ found:
   p->max_context_id = -1;
   p->now_context_id = -1;
   p->is_counting = 0;
+  // p->finish_counting = 0;
   p->ticks_passed = 0;
   p->delay = -1;
   p->thrdstop_handler = 0;
