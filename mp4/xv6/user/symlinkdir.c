@@ -37,6 +37,7 @@ public12()
 {
   int r, fd1 = -1, fd2 = -1;
   char c = 0, c2 = 0;
+  // int fd3 = -1;
     
   printf("Start: test symlinks to directory\n");
 
@@ -64,7 +65,18 @@ public12()
     fail("Value read from /testsymlink2/p differs from value written to /testsymlink3/q/p\n");
 
   printf("public testcase 2: ok\n");
+
+  // chdir("/testsymlink3/q");
+  // fd3 = open("p", O_RDWR);
+  // char c3 = 0;
+  // r = read(fd3, &c3, 1);
+  // if(r!=1) fail("Failed to read ./p from /testsymlink3/q\n");
+  // if(c!=c3)
+  //   fail("Value read from /testsymlink2/p differs from value written to /testsymlink3/q/p\n");
+  // printf("DIY testcase 1: ok\n");
+
 done:
   close(fd1);
   close(fd2);
+  // close(fd3);
 }

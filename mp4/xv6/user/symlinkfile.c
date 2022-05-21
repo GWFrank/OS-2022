@@ -78,17 +78,17 @@ public1(void)
   r = symlink("/testsymlink/a", "/testsymlink/b");
   if(r < 0)
     fail("symlink b -> a failed");
-
+  
   // 3. check b file type
   if (stat_slink("/testsymlink/b", &st) != 0)
     fail("failed to stat b");
   if(st.type != T_SYMLINK)
     fail("b isn't a symlink");
-
+  
   // 4. Write a
   if(write(fd1, buf, sizeof(buf)) != 4)
     fail("failed to write to a");
-
+  
   // 5. Read b and check if it is identical to a.
   fd2 = open("/testsymlink/b", O_RDWR);
   if(fd2 < 0)

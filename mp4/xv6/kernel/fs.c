@@ -389,6 +389,8 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
   bn -= NDIRECT;
+  // printf("NINDIRECT = %d\n", NINDIRECT);
+  // printf("NDUBINDIRECT = %d\n", NDUBINDIRECT);
 
   if(bn < NINDIRECT){
     // Load indirect block, allocating if necessary.
@@ -401,6 +403,61 @@ bmap(struct inode *ip, uint bn)
       log_write(bp);
     }
     brelse(bp);
+    return addr;
+  }
+  // printf("bn=%d\n", bn);
+  bn -= NINDIRECT;
+  
+  if(bn < NDUBINDIRECT){
+    // First doubly indirect block
+    // Locates the doubly indirect block
+    if((addr = ip->addrs[NDIRECT+1]) == 0)
+      ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);
+    // Locates the singling indirect block
+    struct buf *indir_bp = bread(ip->dev, addr);
+    uint *indir_a = (uint*)indir_bp->data;
+    uint indir_bn = bn/NINDIRECT; // Block number on the singly indirect block
+    if ((addr = indir_a[indir_bn]) == 0) {
+      indir_a[indir_bn] = addr = balloc(ip->dev);
+      log_write(indir_bp);
+    }
+    // Locates the direct block
+    struct buf *dir_bp = bread(ip->dev, addr);
+    uint *dir_a = (uint*)dir_bp->data;
+    uint dir_bn = bn%NINDIRECT; // Block number on the direct block
+    if ((addr = dir_a[dir_bn]) == 0) {
+      dir_a[dir_bn] = addr = balloc(ip->dev);
+      log_write(dir_bp);
+    }
+    brelse(dir_bp);
+    brelse(indir_bp);
+    return addr;
+  }
+  bn -= NDUBINDIRECT;
+
+  if(bn < NDUBINDIRECT){
+    // Second doubly indirect block
+    // Locates the doubly indirect block
+    if((addr = ip->addrs[NDIRECT+2]) == 0)
+      ip->addrs[NDIRECT+2] = addr = balloc(ip->dev);
+    // Locates the singling indirect block
+    struct buf *indir_bp = bread(ip->dev, addr);
+    uint *indir_a = (uint*)indir_bp->data;
+    uint indir_bn = bn/NINDIRECT; // Block number on the singly indirect block
+    if ((addr = indir_a[indir_bn]) == 0) {
+      indir_a[indir_bn] = addr = balloc(ip->dev);
+      log_write(indir_bp);
+    }
+    brelse(indir_bp);
+    // Locates the direct block
+    struct buf *dir_bp = bread(ip->dev, addr);
+    uint *dir_a = (uint*)dir_bp->data;
+    uint dir_bn = bn%NINDIRECT; // Block number on the direct block
+    if ((addr = dir_a[dir_bn]) == 0) {
+      dir_a[dir_bn] = addr = balloc(ip->dev);
+      log_write(dir_bp);
+    }
+    brelse(dir_bp);
     return addr;
   }
 
@@ -436,6 +493,52 @@ itrunc(struct inode *ip)
     brelse(bp);
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
+  }
+
+  if(ip->addrs[NINDIRECT+1]){
+    // Go through every singly indirect blocks
+    struct buf *indir_bp = bread(ip->dev, ip->addrs[NDIRECT+1]);
+    uint *indir_a = (uint*)indir_bp->data;
+    for(j = 0; j < NINDIRECT; j++){
+      if(indir_a[j]) {
+        // Go through every direct blocks
+        struct buf *dir_bp = bread(ip->dev, indir_a[j]);
+        uint *dir_a = (uint*)dir_bp->data;
+        for(int k = 0; k < NINDIRECT; k++){
+          if (dir_a[k])
+            bfree(ip->dev, dir_a[k]);
+        }
+        brelse(dir_bp);
+
+        bfree(ip->dev, indir_a[j]);
+      }
+    }
+    brelse(indir_bp);
+    bfree(ip->dev, ip->addrs[NDIRECT+1]);
+    ip->addrs[NDIRECT+1] = 0;
+  }
+
+  if(ip->addrs[NINDIRECT+2]){
+    // Go through every singly indirect blocks
+    struct buf *indir_bp = bread(ip->dev, ip->addrs[NDIRECT+2]);
+    uint *indir_a = (uint*)indir_bp->data;
+    for(j = 0; j < NINDIRECT; j++){
+      if(indir_a[j]) {
+        // Go through every direct blocks
+        struct buf *dir_bp = bread(ip->dev, indir_a[j]);
+        uint *dir_a = (uint*)dir_bp->data;
+        for(int k = 0; k < NINDIRECT; k++){
+          if (dir_a[k])
+            bfree(ip->dev, dir_a[k]);
+        }
+        brelse(dir_bp);
+        
+        bfree(ip->dev, indir_a[j]);
+      }
+    }
+    brelse(indir_bp);
+    bfree(ip->dev, ip->addrs[NDIRECT+2]);
+    ip->addrs[NDIRECT+2] = 0;
   }
 
   ip->size = 0;
@@ -643,8 +746,50 @@ namex(char *path, int nameiparent, char *name)
   else
     ip = idup(myproc()->cwd);
 
+  int depth_count = 0;
   while((path = skipelem(path, name)) != 0){
     ilock(ip);
+
+    // Follow symlink when it's not the last level
+    // Append symlink target to the front of path
+    if (ip->type == T_SYMLINK) {
+      // printf("name: %s, path: %s\n", name, path);
+      depth_count++;
+      if (depth_count >= 10){ // Is a cycle
+        iunlockput(ip);
+        return 0;
+      }
+      
+      char new_dir[MAXPATH];
+      if (readi(ip, 0, (uint64)new_dir, 0, MAXPATH) <= 0) {
+        iunlockput(ip);
+        return 0;
+      }
+      // sym_link/name/path -> sym_link_target/name/path
+      int new_dir_end = strlen(new_dir);
+      new_dir[new_dir_end] = '/';
+      new_dir_end++;
+
+      strncpy(new_dir+new_dir_end, name, strlen(name));
+      new_dir_end += strlen(name);
+      
+      strncpy(new_dir+new_dir_end, path, strlen(path));
+      new_dir[new_dir_end+strlen(path)] = '/';
+      new_dir[new_dir_end+strlen(path)+1] = '\0';
+      
+      strncpy(path, new_dir, strlen(new_dir)+1);
+      
+      
+      // Only works with absolute target path symlinks
+      next = iget(ROOTDEV, ROOTINO);
+      
+      iunlockput(ip);
+      ip = next;
+      // printf("new path: %s\n", path);
+      continue;
+    }
+
+
     if(ip->type != T_DIR){
       iunlockput(ip);
       return 0;
