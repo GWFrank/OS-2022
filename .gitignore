@@ -1,3 +1,4 @@
 *.zip
 .vscode/
 slides/
+book-riscv-rev1.pdf
